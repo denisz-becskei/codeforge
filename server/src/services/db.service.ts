@@ -1,10 +1,9 @@
-import AppDataSource from "../config/data-source";
 import { Conversation } from "../models/Conversation";
 import { Message } from "../models/Message";
 
 class DBService {
-  private conversationRepo = AppDataSource.getRepository(Conversation);
-  private messageRepo = AppDataSource.getRepository(Message);
+  private conversationRepo: any = undefined;
+  private messageRepo: any = undefined;
 
   async createConversation(title: string): Promise<Conversation> {
     const conversation = new Conversation();
@@ -46,6 +45,11 @@ class DBService {
         messages: { timestamp: "ASC" }
       }
     });
+  }
+
+  async setRepos(conversationRepository: any, messageRepository: any) {
+    this.conversationRepo = conversationRepository;
+    this.messageRepo = messageRepository;
   }
 }
 

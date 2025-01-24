@@ -1,19 +1,33 @@
 import express from 'express';
-import { createConnection } from 'typeorm';
+import { DataSource } from 'typeorm';
+import { Conversation } from './models/Conversation';
+import { Message } from './models/Message';
 import chatRoutes from './routes/chat.routes';
+import dbService from './services/db.service';
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(express.json());
+const AppDataSource = new DataSource({
+  type: "sqlite",
+  database: "/data/database.sqlite",
+  entities: [Conversation, Message],
+  synchronize: true,
+  logging: true,
+});
 
-createConnection().then(() => {
-  console.log('Database connected');
-  
-  app.set('trust proxy', true);  
-  app.use('/chat', chatRoutes);
+AppDataSource.initialize()
+  .then(() => {
+    console.log('Database connected');
+    
+    app.use(express.json());
+    app.set('trust proxy', true);  
+    app.use('/chat', chatRoutes);
 
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
-}).catch(error => console.log('TypeORM connection error:', error));
+    dbService.setRepos(AppDataSource.getRepository(Conversation), AppDataSource.getRepository(Message));
+
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  })
+  .catch(error => console.log('TypeORM connection error:', error));
