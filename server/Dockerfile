@@ -15,11 +15,10 @@ RUN npm install
 COPY . .
 
 # Change ownership of all files to node user
-RUN chown -R node:node /app
+RUN find /app -not -path "/app/node_modules/*" -not -path "/app/node_modules" -exec chown node:node {} +
 
 # Build the project
-RUN npm run build && \
-    chown -R node:node /app
+RUN npm run build
 
 # Switch to non-root user
 USER node

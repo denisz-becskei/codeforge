@@ -12,6 +12,7 @@ const App: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isDragging, setIsDragging] = useState(false);
+  const [currentModel, setCurrentModel] = useState("");
   const messagesRef = useRef<Message[]>([]);
 
   const fetchConversations = async () => {
@@ -23,7 +24,17 @@ const App: React.FC = () => {
     }
   };
 
+  const getCurrentModel = async () => {
+    try {
+      const response = await ChatAPI.getModel();
+      setCurrentModel(response.data.model);
+    } catch (error) {
+      console.error("Error fetching current model:", error);
+    }
+  }
+
   useEffect(() => {
+    getCurrentModel();
     fetchConversations();
   }, []);
 
@@ -54,7 +65,7 @@ const App: React.FC = () => {
         <ConversationList conversations={conversations} onSelectConversation={setSelectedConversation} onDeleteConversation={handleDeleteConversation} selectedConversationId={selectedConversation?.id} />
         <Resizer onDrag={handleResize} onDragStart={() => setIsDragging(true)} onDragEnd={() => setIsDragging(false)} />
       </div>
-      <ChatPanel conversation={selectedConversation} onReceiveFirstChunk={fetchConversations} setSelectedConversation={setSelectedConversation} setConversations={setConversations} />
+      <ChatPanel conversation={selectedConversation} model={currentModel} onReceiveFirstChunk={fetchConversations} setSelectedConversation={setSelectedConversation} setConversations={setConversations} />
     </div>
   );
 };

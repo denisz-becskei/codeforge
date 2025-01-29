@@ -23,7 +23,7 @@
 
 .resizer:hover,
 .app-container.dragging .resizer {
-  background: #007bff33;
+  background: #bc701f88;
 }
 
 
@@ -73,7 +73,7 @@
 }
 
 .message.user .message-content {
-  background: #007bff;
+  background: #bc701f;
   color: white;
 }
 
@@ -99,9 +99,16 @@
 }
 
 .message-input {
-  padding: 20px;
+  padding: 20px 20px 10px;
   display: flex;
   gap: 10px;
+}
+
+.current-model {
+  margin: 0;
+  text-align: center;
+  font-size: 10pt;
+  color: #333;
 }
 
 .message-input input {
@@ -113,7 +120,7 @@
 
 .message-input button {
   padding: 10px 20px;
-  background: #007bff;
+  background: #bc701f;
   color: white;
   border: none;
   border-radius: 5px;
@@ -159,7 +166,7 @@
 
 .conversation-item.active {
   background: #e3f2fd;
-  border-left: 4px solid #2196f3;
+  border-left: 4px solid #bc701f;
 }
 
 .conversation-title {
@@ -229,4 +236,24 @@
 
 .copy-button svg {
   display: block;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 1.2vw;
+}
+
+::-webkit-scrollbar-track-piece:start {
+  margin-top: 3.15rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #bc701f;
+  border-radius: 16px;
+  border: 0.4vw solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a05f1a;
 }

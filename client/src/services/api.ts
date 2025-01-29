@@ -6,6 +6,7 @@ export const ChatAPI = {
   getAllConversations: () => api.get('/api/chat/conversations'),
   getConversation: (id: string) => api.get(`/api/chat/conversations/${id}`),
   deleteConversation: (id: string) => api.delete(`/api/chat/conversations/${id}`),
+  getModel: () => api.get("/api/chat/model"),
   sendMessage: (conversationId: string | null, message: string) => {
     const payload = conversationId 
       ? { conversationId, message }

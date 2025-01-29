@@ -1,30 +1,8 @@
 import { Request, Response } from "express";
 import dbService from "../services/db.service";
-import ollamaService from "../services/ollama.service";
 import { Ollama } from "ollama";
 
 class ChatController {
-  async handleMessage(req: Request, res: Response) {
-    let { conversationId, message } = req.body;
-
-    if (conversationId === undefined || !dbService.doesConversationExist(conversationId)) {
-      conversationId = (await dbService.createConversation(message)).id;
-    }
-
-    try {
-      await dbService.addMessage(conversationId, message, "user");
-
-      const aiResponse = await ollamaService.generateResponse(message);
-
-      await dbService.addMessage(conversationId, aiResponse, "bot");
-
-      res.json({ success: true, response: aiResponse });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, error: "Internal server error" });
-    }
-  }
-
   async streamResponse(req: Request, res: Response) {
     let { conversationId, message } = req.body;
 
@@ -45,7 +23,7 @@ class ChatController {
       const ollama = new Ollama({ host: process.env.OLLAMA_HOST });
 
       const response = await ollama.chat({
-        model: "deepseek-coder-v2:16b",
+        model: process.env.OLLAMA_MODEL || "",
         messages: [{ role: "user", content: message }],
         stream: true,
       });
@@ -101,6 +79,10 @@ class ChatController {
 
       res.status(500).json({ success: false, error: "Failed to fetch conversations" });
     }
+  }
+
+  async getCurrentModel(_: Request, res: Response) {
+    res.status(200).json({model: process.env.OLLAMA_MODEL});
   }
 }
 

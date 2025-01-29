@@ -5,12 +5,13 @@ import { ChatAPI } from "../services/api";
 
 interface ChatPanelProps {
   conversation: Conversation | null;
+  model: string;
   onReceiveFirstChunk: () => Promise<void>;
   setSelectedConversation: React.Dispatch<React.SetStateAction<Conversation | null>>;
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ conversation, onReceiveFirstChunk, setSelectedConversation, setConversations }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ conversation, model, onReceiveFirstChunk, setSelectedConversation, setConversations }) => {
   const [newMessage, setNewMessage] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedText, setStreamedText] = useState("");
@@ -116,6 +117,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ conversation, onReceiveFirstChunk
           {isStreaming ? "Sending..." : "Send"}
         </button>
       </div>
+      <p className="current-model">Current Model: {model}</p>
     </div>
   );
 };
