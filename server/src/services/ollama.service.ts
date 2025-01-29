@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Readable } from 'stream';
 
 class OllamaService {
   private readonly ollamaUrl: string;
@@ -10,7 +11,7 @@ class OllamaService {
   async generateResponse(prompt: string) {
     try {
       const response = await axios.post(`${this.ollamaUrl}/api/generate`, {
-        model: 'llama3:8b',
+        model: 'deepseek-coder-v2:16b',
         prompt: prompt,
         stream: false
       });

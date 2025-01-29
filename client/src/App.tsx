@@ -1,93 +1,60 @@
-import React, { useEffect, useState } from 'react';
-import { Conversation, Message } from './types/types';
-import './App.css';
-import ConversationList from './components/ConversationList';
-import ChatPanel from './components/ChatPanel';
-import { ChatAPI } from './services/api';
+import React, { useEffect, useRef, useState } from "react";
+import { Conversation, Message } from "./types/types";
+import "./App.css";
+import ConversationList from "./components/ConversationList";
+import ChatPanel from "./components/ChatPanel";
+import { ChatAPI } from "./services/api";
+import Resizer from "./components/Resizer";
 
 const App: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(300);
+  const [isDragging, setIsDragging] = useState(false);
+  const messagesRef = useRef<Message[]>([]);
 
-  useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        const response = await ChatAPI.getAllConversations();
-        setConversations(response.data);
-      } catch (error) {
-        console.error('Error fetching conversations:', error);
-      }
-    };
-    
-    fetchConversations();
-  }, []);
-
-  const handleNewMessage = async (message: string) => {
-    if (!message.trim()) return;
-
+  const fetchConversations = async () => {
     try {
-      const response = await ChatAPI.sendMessage(
-        selectedConversation?.id || null,
-        message
-      );
-
-      if (!selectedConversation) {
-        // Handle new conversation
-        const newConversation = {
-          id: response.data.conversationId,
-          title: message.substring(0, 20),
-          messages: []
-        };
-        setConversations([...conversations, newConversation]);
-        setSelectedConversation(newConversation);
-      }
-
-      // Update messages
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: message,
-        sender: 'user',
-        timestamp: new Date(),
-      };
-
-      const botMessage: Message = {
-        id: Date.now().toString(),
-        text: response.data.response,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-
-      const updatedConversation = selectedConversation 
-        ? {
-            ...selectedConversation,
-            messages: [...selectedConversation.messages, newMessage, botMessage]
-          }
-        : {
-            id: response.data.conversationId,
-            title: message.substring(0, 20),
-            messages: [newMessage, botMessage]
-          };
-
-      setSelectedConversation(updatedConversation);
-      setConversations(conversations.map(conv => 
-        conv.id === updatedConversation.id ? updatedConversation : conv
-      ));
-
+      const response = await ChatAPI.getAllConversations();
+      setConversations(response.data);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error fetching conversations:", error);
     }
   };
 
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  useEffect(() => {
+    messagesRef.current = selectedConversation?.messages || [];
+  }, [selectedConversation?.messages]);
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    try {
+      await ChatAPI.deleteConversation(conversationId);
+      setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(null);
+      }
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+    }
+  };
+
+  const handleResize = (clientX: number) => {
+    const newWidth = Math.max(200, Math.min(600, clientX));
+    setSidebarWidth(newWidth);
+  };
+
   return (
-    <div className="app-container">
-      <ConversationList 
-        conversations={conversations}
-        onSelectConversation={setSelectedConversation}
-      />
-      <ChatPanel 
-        conversation={selectedConversation}
-        onSendMessage={handleNewMessage}
-      />
+    <div className={`app-container ${isDragging ? "dragging" : ""}`}>
+      <div className="conversation-list-container" style={{ width: sidebarWidth }}>
+        <ConversationList conversations={conversations} onSelectConversation={setSelectedConversation} onDeleteConversation={handleDeleteConversation} selectedConversationId={selectedConversation?.id} />
+        <Resizer onDrag={handleResize} onDragStart={() => setIsDragging(true)} onDragEnd={() => setIsDragging(false)} />
+      </div>
+      <ChatPanel conversation={selectedConversation} onReceiveFirstChunk={fetchConversations} setSelectedConversation={setSelectedConversation} setConversations={setConversations} />
     </div>
   );
 };

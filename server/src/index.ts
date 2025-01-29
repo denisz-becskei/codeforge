@@ -4,6 +4,8 @@ import { Conversation } from './models/Conversation';
 import { Message } from './models/Message';
 import chatRoutes from './routes/chat.routes';
 import dbService from './services/db.service';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -13,7 +15,6 @@ const AppDataSource = new DataSource({
   database: "/data/database.sqlite",
   entities: [Conversation, Message],
   synchronize: true,
-  logging: true,
 });
 
 AppDataSource.initialize()
@@ -22,7 +23,7 @@ AppDataSource.initialize()
     
     app.use(express.json());
     app.set('trust proxy', true);  
-    app.use('/chat', chatRoutes);
+    app.use('/api/chat', chatRoutes);
 
     dbService.setRepos(AppDataSource.getRepository(Conversation), AppDataSource.getRepository(Message));
 
