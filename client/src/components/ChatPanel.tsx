@@ -10,12 +10,7 @@ interface ChatPanelProps {
   setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ 
-  conversation, 
-  onReceiveFirstChunk, 
-  setSelectedConversation, 
-  setConversations 
-}) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ conversation, onReceiveFirstChunk, setSelectedConversation, setConversations }) => {
   const [newMessage, setNewMessage] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedText, setStreamedText] = useState("");
@@ -32,13 +27,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const handleSend = async () => {
     if (!newMessage.trim() || isStreaming) return;
     let isFirstChunkReceived = false;
-  
+
     setIsStreaming(true);
     setStreamedText("");
     const tempConvId = conversation?.id ?? `temp-${Date.now()}`;
-  
+
     try {
-      // Create temporary user message
       const userMessage: Message = {
         id: `user-${Date.now()}`,
         text: newMessage,
@@ -46,16 +40,15 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         timestamp: new Date(),
       };
 
-      // Create temporary bot message for streaming
       const botMessage: Message = {
         id: `bot-${Date.now()}`,
         text: "",
         sender: "bot",
         timestamp: new Date(),
       };
-  
+
       let updatedConversation: Conversation;
-  
+
       if (conversation) {
         updatedConversation = {
           ...conversation,
@@ -67,24 +60,23 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           title: newMessage.substring(0, 20),
           messages: [userMessage, botMessage],
         };
-        setConversations(prev => [...prev, updatedConversation]);
+        setConversations((prev) => [...prev, updatedConversation]);
       }
-  
+
       setSelectedConversation(updatedConversation);
 
-      // Start streaming
       await ChatAPI.streamMessage(
         tempConvId,
         newMessage,
         (data) => {
-          setStreamedText(prev => prev + data.content);
-          setSelectedConversation(current => {
+          setStreamedText((prev) => prev + data.content);
+          setSelectedConversation((current) => {
             if (!current) return current;
             const updatedMessages = [...current.messages];
             const lastMessage = updatedMessages[updatedMessages.length - 1];
             if (lastMessage.sender === "bot") {
               lastMessage.text = (lastMessage.text || "") + data.content;
-              if(!isFirstChunkReceived) {
+              if (!isFirstChunkReceived) {
                 isFirstChunkReceived = true;
                 onReceiveFirstChunk();
               }
@@ -97,17 +89,16 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         },
         (error) => {
           console.error("Streaming error:", error);
-          // Handle error appropriately
         },
         () => {
-          setIsStreaming(false);
-          // Handle completion if needed
+          
         }
       );
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
       setNewMessage("");
+      setIsStreaming(false);
     }
   };
 
@@ -115,30 +106,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     <div className="chat-panel">
       <div className="messages">
         {conversation?.messages.map((message) => (
-          <MessageComponent 
-            key={message.id} 
-            message={message} 
-            isStreaming={isStreaming && message.sender === "bot" && 
-              message === conversation.messages[conversation.messages.length - 1]} 
-          />
+          <MessageComponent key={message.id} message={message} isStreaming={isStreaming && message.sender === "bot" && message === conversation.messages[conversation.messages.length - 1]} />
         ))}
         <div ref={messagesEndRef} />
       </div>
       <div className="message-input">
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Type your message..."
-          disabled={isStreaming}
-        />
-        <button 
-          onClick={handleSend}
-          disabled={isStreaming}
-          className={isStreaming ? 'opacity-50 cursor-not-allowed' : ''}
-        >
-          {isStreaming ? 'Sending...' : 'Send'}
+        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyPress={(e) => e.key === "Enter" && handleSend()} placeholder="Type your message..." disabled={isStreaming} />
+        <button onClick={handleSend} disabled={isStreaming} className={isStreaming ? "opacity-50 cursor-not-allowed" : ""}>
+          {isStreaming ? "Sending..." : "Send"}
         </button>
       </div>
     </div>
