@@ -240,7 +240,7 @@
 
 ::-webkit-scrollbar {
   height: 8px;
-  width: 1.2vw;
+  width: 0.5rem;
 }
 
 ::-webkit-scrollbar-track-piece:start {
@@ -250,13 +250,12 @@
 ::-webkit-scrollbar-thumb {
   background-color: #bc701f;
   border-radius: 16px;
-  border: 0.4vw solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a05f1a;
   height: 8px;
-  width: 1.2vw;
+  width: 0.5rem;
   border-radius: 16px;
 }
