@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dracula } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
@@ -41,7 +40,6 @@ export function MarkdownRenderer({ children: markdown }: MarkdownRendererProps) 
         document.body.removeChild(textArea);
       }
     };
-    
 
     return !match ? (
       <code className={className} {...props}>
@@ -71,15 +69,36 @@ export function MarkdownRenderer({ children: markdown }: MarkdownRendererProps) 
     );
   };
 
+  // Function to escape HTML tags
+  const escapeHtml = (unsafe: string) => {
+    return unsafe
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/&(?!amp;|lt;|gt;|quot;|#39;)/g, '&amp;');
+  };
+
+  // Pre-process the markdown to escape HTML tags outside of code blocks
+  const processMarkdown = (text: string) => {
+    // Split the text by code blocks (both fenced and inline)
+    const parts = text.split(/(`{1,3}[^`]*`{1,3})/g);
+    return parts
+      .map((part, index) => {
+        // If it's a code block (odd indices due to capture groups), leave it unchanged
+        if (index % 2 === 1) return part;
+        // If it's not a code block, escape HTML tags
+        return escapeHtml(part);
+      })
+      .join('');
+  };
+
   return (
     <Markdown
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
       components={{
         code: CodeBlock
       }}
     >
-      {markdown}
+      {processMarkdown(markdown)}
     </Markdown>
   );
 }

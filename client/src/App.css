@@ -256,4 +256,7 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a05f1a;
+  height: 8px;
+  width: 1.2vw;
+  border-radius: 16px;
 }

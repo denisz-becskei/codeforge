@@ -9,7 +9,6 @@ import Resizer from "./components/Resizer";
 const App: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isDragging, setIsDragging] = useState(false);
   const [currentModel, setCurrentModel] = useState("");

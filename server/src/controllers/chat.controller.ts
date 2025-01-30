@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import dbService from "../services/db.service";
-import { Ollama } from "ollama";
+import { Message, Ollama } from "ollama";
 
 class ChatController {
   async streamResponse(req: Request, res: Response) {
@@ -11,7 +11,6 @@ class ChatController {
       if (!doesConversationExist) {
         conversationId = (await dbService.createConversation(message)).id;
       }
-      await dbService.addMessage(conversationId, message, "user");
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -22,9 +21,23 @@ class ChatController {
 
       const ollama = new Ollama({ host: process.env.OLLAMA_HOST });
 
+      let messages : Message[] = [];
+
+      if(process.env.HISTORY === "true") {
+        const savedMessages = await dbService.getMessages(conversationId); 
+        for(const savedMessage of savedMessages) {
+          messages.push({ role: savedMessage.sender, content: savedMessage.text });
+        }
+        if(process.env.HISTORY_DEPTH) {
+          if(messages.length > parseInt(process.env.HISTORY_DEPTH)) {
+            messages = messages.slice(-parseInt(process.env.HISTORY_DEPTH) - 1);
+          }
+        }
+      }
+      messages.push({ role: "user", content: message });
       const response = await ollama.chat({
         model: process.env.OLLAMA_MODEL || "",
-        messages: [{ role: "user", content: message }],
+        messages: messages,
         stream: true,
       });
 
@@ -38,11 +51,22 @@ class ChatController {
       }
 
       res.write("data: [DONE]\n\n");
+      await dbService.addMessage(conversationId, message, "user");
       await dbService.addMessage(conversationId, text, "bot");
       res.end();
     } catch (error) {
       console.error("Streaming error:", error);
       res.status(500).json({ error: "Streaming failed" });
+    }
+  }
+
+  async createConversation(req: Request, res: Response) {
+    try {
+      const { title } = req.body;
+      const conversation = await dbService.createConversation(title);
+      res.json(conversation);
+    } catch (error) {
+      console.log(error);
     }
   }
 

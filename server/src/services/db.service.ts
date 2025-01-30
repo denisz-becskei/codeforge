@@ -74,6 +74,19 @@ class DBService {
     return this.messageRepo.save(message);
   }
 
+  async getMessages(conversationId: string): Promise<Message[]> {
+    return await this.messageRepo.find({
+      where: {
+        conversation: {
+          id: conversationId
+        }
+      },
+      order: {
+        timestamp: 'ASC'
+      }
+    });
+  }
+
   async setRepos(conversationRepository: any, messageRepository: any) {
     this.conversationRepo = conversationRepository;
     this.messageRepo = messageRepository;
