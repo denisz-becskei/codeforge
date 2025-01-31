@@ -4,7 +4,7 @@ import { Message, Ollama } from "ollama";
 
 class ChatController {
   async streamResponse(req: Request, res: Response) {
-    let { conversationId, message } = req.body;
+    let { conversationId, message, userMessageId, botMessageId } = req.body;
 
     try {
       const doesConversationExist = await dbService.doesConversationExist(conversationId);
@@ -51,8 +51,60 @@ class ChatController {
       }
 
       res.write("data: [DONE]\n\n");
-      await dbService.addMessage(conversationId, message, "user");
-      await dbService.addMessage(conversationId, text, "bot");
+      await dbService.addMessage(userMessageId,conversationId, message, "user");
+      await dbService.addMessage(botMessageId, conversationId, text, "bot");
+      res.end();
+    } catch (error) {
+      console.error("Streaming error:", error);
+      res.status(500).json({ error: "Streaming failed" });
+    }
+  }
+
+  async regenerateMessage(req: Request, res: Response) {
+    let { conversationId, messageId } = req.body;
+
+    try {
+      const doesConversationExist = await dbService.doesConversationExist(conversationId);
+      if (!doesConversationExist) {
+        throw new Error("Cannot regenerate a message from a conversation that does not exist");
+      }
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("Transfer-Encoding", "chunked");
+
+      res.flushHeaders?.();
+
+      const ollama = new Ollama({ host: process.env.OLLAMA_HOST });
+
+      await dbService.deletePastMessageTimestamp(messageId, conversationId);
+      const conversation = await dbService.getConversation(conversationId);
+      const currentMessages = conversation!.messages;
+      await dbService.deleteMessage(currentMessages[currentMessages.length - 1].id);
+
+      const messages = [];
+      for(const savedMessage of currentMessages.slice(0, -1)) {
+        messages.push({ role: savedMessage.sender, content: savedMessage.text });
+      }
+
+      const response = await ollama.chat({
+        model: process.env.OLLAMA_MODEL || "",
+        messages: messages,
+        stream: true,
+      });
+
+      let text = "";
+
+      for await (const chunk of response) {
+        if (chunk.message?.content) {
+          text += chunk.message.content;
+          res.write(`data: ${JSON.stringify({ content: chunk.message.content })}\n\n`);
+        }
+      }
+
+      res.write("data: [DONE]\n\n");
+      await dbService.addMessage(messageId, conversationId, text, "bot");
       res.end();
     } catch (error) {
       console.error("Streaming error:", error);

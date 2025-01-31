@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { dracula } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import React, { useState } from "react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { dracula } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 type MarkdownRendererProps = {
   children: string;
@@ -12,22 +14,23 @@ export function MarkdownRenderer({ children: markdown }: MarkdownRendererProps) 
   const [copied, setCopied] = useState(false);
 
   const CodeBlock = ({ children, className, ...props }: any) => {
-    const match = /language-(\w+)/.exec(className || '');
-    const codeContent = String(children).replace(/\n$/, '');
-    
+    const match = /language-(\w+)/.exec(className || "");
+    const codeContent = String(children).replace(/\n$/, "");
+
     const handleCopy = () => {
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(codeContent)
+        navigator.clipboard
+          .writeText(codeContent)
           .then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           })
-          .catch(err => console.error('Clipboard write failed:', err));
+          .catch((err) => console.error("Clipboard write failed:", err));
       } else {
         const textArea = document.createElement("textarea");
         textArea.value = codeContent;
         textArea.style.position = "fixed";
-        textArea.style.opacity = "0";  
+        textArea.style.opacity = "0";
         document.body.appendChild(textArea);
         textArea.select();
         try {
@@ -69,33 +72,33 @@ export function MarkdownRenderer({ children: markdown }: MarkdownRendererProps) 
     );
   };
 
-  // Function to escape HTML tags
   const escapeHtml = (unsafe: string) => {
     return unsafe
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/&(?!amp;|lt;|gt;|quot;|#39;)/g, '&amp;');
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/&(?!amp;|lt;|gt;|quot;|#39;)/g, "&amp;");
   };
 
-  // Pre-process the markdown to escape HTML tags outside of code blocks
   const processMarkdown = (text: string) => {
-    // Split the text by code blocks (both fenced and inline)
-    const parts = text.split(/(`{1,3}[^`]*`{1,3})/g);
+    const parts = text.split(/(`{1,3}[^`]*`{1,3}|\${1,2}[\s\S]*?\${1,2})/g);
     return parts
       .map((part, index) => {
-        // If it's a code block (odd indices due to capture groups), leave it unchanged
-        if (index % 2 === 1) return part;
-        // If it's not a code block, escape HTML tags
+        if (index % 2 === 1) {
+          if (part.startsWith("`")) return part;
+          if (part.startsWith("$")) return part;
+        }
+
         return escapeHtml(part);
       })
-      .join('');
+      .join("");
   };
 
   return (
     <Markdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
       components={{
-        code: CodeBlock
+        code: CodeBlock,
       }}
     >
       {processMarkdown(markdown)}

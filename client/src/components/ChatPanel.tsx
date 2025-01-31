@@ -67,6 +67,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ conversation, model, onReceiveFir
       await ChatAPI.streamMessage(
         updatedConversation.id,
         newMessage,
+        userMessage.id,
+        botMessage.id,
         (data) => {
           setStreamedText((prev) => prev + data.content);
           setSelectedConversation((current) => {
@@ -98,12 +100,84 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ conversation, model, onReceiveFir
       setIsStreaming(false);
     }
   };
+  
+  const handleRegenerate = async (botMessageId: string) => {
+    if (!conversation) return;
+    let isFirstChunkReceived = false;
+
+    const botMessageIndex = conversation.messages.findIndex((m) => m.id === botMessageId);
+    if (botMessageIndex === -1) return;
+
+    const userMessage = conversation.messages[botMessageIndex - 1];
+    if (!userMessage || userMessage.sender !== 'user') return;
+
+    const truncatedMessages = conversation.messages.slice(0, botMessageIndex);
+
+    const savedBotMessage = conversation.messages[botMessageIndex];
+
+    try {
+      setIsStreaming(true);
+      setStreamedText("");
+
+      const updatedConversation: Conversation = {
+        ...conversation,
+        messages: truncatedMessages,
+      };
+
+      setSelectedConversation(updatedConversation);
+
+      const botMessage: Message = {
+        id: `bot-${Date.now()}`,
+        text: "",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+
+      const newMessages = [...truncatedMessages, botMessage];
+      setSelectedConversation((prev) => prev ? { ...prev, messages: newMessages } : prev);
+
+      await ChatAPI.regenerateMessage(
+        updatedConversation.id,
+        savedBotMessage.id,
+        (data) => {
+          setStreamedText((prev) => prev + data.content);
+          setSelectedConversation((current) => {
+            if (!current) return current;
+            const updatedMessages = [...current.messages];
+            const lastMessage = updatedMessages[updatedMessages.length - 1];
+            if (lastMessage.sender === "bot") {
+              lastMessage.text = (lastMessage.text || "") + data.content;
+              if (data.content && !isFirstChunkReceived) {
+                isFirstChunkReceived = true;
+                onReceiveFirstChunk();
+              }
+            }
+            return { ...current, messages: updatedMessages };
+          });
+        },
+        (error) => {
+          console.error("Streaming error:", error);
+        },
+        () => {}
+      );
+    } catch (error) {
+      console.error("Error regenerating message:", error);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
 
   return (
     <div className="chat-panel">
       <div className="messages">
         {conversation?.messages.map((message) => (
-          <MessageComponent key={message.id} message={message} isStreaming={isStreaming && message.sender === "bot" && message === conversation?.messages[conversation.messages.length - 1]} />
+          <MessageComponent
+            key={message.id}
+            message={message}
+            isStreaming={isStreaming && message.sender === 'bot' && message === conversation?.messages[conversation.messages.length - 1]}
+            isGlobalStreaming={isStreaming}
+            onRegenerate={handleRegenerate}
+          />
         ))}
         <div ref={messagesEndRef} />
       </div>

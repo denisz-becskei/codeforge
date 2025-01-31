@@ -3,7 +3,7 @@ import { Message } from './Message';
 
 @Entity()
 export class Conversation {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar' })

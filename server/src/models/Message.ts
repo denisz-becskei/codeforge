@@ -1,9 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Conversation } from './Conversation';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from "typeorm";
+import { Conversation } from "./Conversation";
 
 @Entity()
 export class Message {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: string;
 
   @Column()
@@ -16,5 +16,9 @@ export class Message {
   timestamp: Date;
 
   @ManyToOne(() => Conversation, conversation => conversation.messages)
+  @JoinColumn({ name: 'conversationId' }) 
   conversation: Conversation;
+
+  @Column() 
+  conversationId: string;
 }

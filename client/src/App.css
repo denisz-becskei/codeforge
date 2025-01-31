@@ -229,11 +229,6 @@
   align-items: center;
 }
 
-.copy-button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-}
-
 .copy-button svg {
   display: block;
 }
@@ -258,4 +253,44 @@
   height: 8px;
   width: 0.5rem;
   border-radius: 16px;
+}
+
+.message-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+.copy-button, .regenerate-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  width: fit-content;
+  height: fit-content;
+}
+
+.copy-button:hover, .regenerate-button:hover {
+  background-color: #f0f0f0;
+  border-radius: 4px;
+}
+
+.copy-button:disabled, .regenerate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.copy-button svg, .regenerate-button svg {
+  pointer-events: none;
 }

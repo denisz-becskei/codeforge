@@ -16,8 +16,6 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, onSe
         onSelectConversation({ id: conversationId, title: "New conversation", messages: [] });
         return;
       }
-
-      // API call to get full conversation details
       const response = await ChatAPI.getConversation(conversationId);
       const conversation = await response.data;
       onSelectConversation(conversation);
